@@ -10,10 +10,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: add url
+      - name: Package files
         run: |
-          echo "\n[Github Action](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})" >> release.txt
-
+          echo "Packing files..."
+          cat > release.txt << 'EOF'
+          \*\*New Build Published\!\!\*\*
+          >KernelVer: tester
+          >DriverKSU: sukisu
+          ```Features:
+          [+] SUSFS ඞ v1214
+          [+] LZ4 v1.10.0 (Optimization armv8a)
+          [+] TCP Pacing Tweaks
+          [+] Wireguard Support
+          [+] Magic Mount Support
+          [+] BBR + ECN Support
+          [+] TMPFS + RCU Support
+          ```
+          EOF
+          
       - name: test
         uses: puernya/tg-bot-upload@main
         with:
