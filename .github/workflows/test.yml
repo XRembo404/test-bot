@@ -15,7 +15,7 @@ jobs:
           echo "Packing files..."
           cat > release.txt << 'EOF'
           **New Build Published\!\!**
-          >KernelVer: android1556.6.98
+          >KernelVer: android1556698
           >DriverKSU: SukiSUuUltra (13250)
           ```Features:
           [+] SUSFS ඞ v1.5.9
@@ -38,3 +38,4 @@ jobs:
             *.txt
             ./*/*.yml
           caption-path: release.txt
+          parse-mode: MarkdownV2
