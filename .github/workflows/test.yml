@@ -14,7 +14,7 @@ jobs:
         run: |
           echo "Packing files..."
           cat > release.txt << 'EOF'
-          \*\*New Build Published\!\!\*\*
+          **New Build Published\!\!**
           >KernelVer: android15-6.6.98
           >DriverKSU: SukiSU-Ultra (13250)
           ```Features:
