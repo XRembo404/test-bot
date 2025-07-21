@@ -1,0 +1,26 @@
+name: Test Build
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: add url
+        run: |
+          echo "\n[Github Action](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})" >> release.txt
+
+      - name: test
+        uses: puernya/tg-bot-upload@main
+        with:
+          bot-id: ${{ secrets.BOT_ID }}
+          chat-id: ${{ secrets.CHAT_ID }}
+          topic-id: ${{ secrets.TOPIC_ID }}
+          file-path: |
+            *.txt
+            ./*/*.yml
+          caption-path: release.txt
