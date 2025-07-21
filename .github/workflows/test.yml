@@ -29,7 +29,7 @@ jobs:
           EOF
           
       - name: test
-        uses: puernya/tg-bot-upload@main
+        uses: puernya/tg-bot-upload@v1
         with:
           bot-id: ${{ secrets.BOT_ID }}
           chat-id: ${{ secrets.CHAT_ID }}
