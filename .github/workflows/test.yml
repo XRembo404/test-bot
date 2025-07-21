@@ -15,8 +15,8 @@ jobs:
           echo "Packing files..."
           cat > release.txt << 'EOF'
           **New Build Published\!\!**
-          >KernelVer: android15-6.6.98
-          >DriverKSU: SukiSU-Ultra (13250)
+          >KernelVer: android1556.6.98
+          >DriverKSU: SukiSUuUltra (13250)
           ```Features:
           [+] SUSFS ඞ v1.5.9
           [+] LZ4 v1.10.0 (Optimization armv8a)
