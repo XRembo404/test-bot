@@ -419,9 +419,13 @@ jobs:
       - name: Change Kernel Name
         run: |
           cd kernel_workspace/common
-          hash1=$(git rev-parse HEAD | cut -c1-13)
-          
-          hash2=$(git rev-parse HEAD^ | cut -c1-10)
+          hash1=$(git rev-parse --verify HEAD | cut -c1-13)
+
+          hash2=$(git rev-list HEAD | sed -n 2p | cut -c1-10)
+          if [ -z "$hash2" ]; then
+            echo "[!] Commit ke-2 tidak ditemukan, generate hash2 acak"
+            hash2=$(head /dev/urandom | tr -dc a-f0-9 | head -c10)
+          fi
           
           kmi="-android15-8-g${hash1}-${hash2}-4k"
           echo "KMI=$kmi"
@@ -509,21 +513,6 @@ jobs:
         with:
          name: AnyKernel3_${{ env.BRANCH_NAME }}_KPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
          path: ./AnyKernel3_KPM/*
-
-      - name: Package files
-        run: |
-          echo "Packing files..."
-          ESCAPED_KERNEL_VER=$(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g')
-          ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
-          #ESCAPED_KERNEL_VER=$(echo "${{ inputs.kernel_version }}" | sed 's/\./\\./g')
-          #ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }}" | sed 's/-/\\-/g')
-          cat > release.txt << EOF
-          **New Build Published\!\!**
-          
-          >KernelVer: $ESCAPED_KERNEL_VER
-          >DriverKSU: $ESCAPED_KSU_VARIANT
-          
-          EOF
           
       - name: Package files
         run: |
