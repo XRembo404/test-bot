@@ -419,8 +419,19 @@ jobs:
       - name: Change Kernel Name
         run: |
           cd kernel_workspace
-          sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
-          sudo sed -i 's/-4k/-android15-8-g7f19c751e334-ab13222567-4k/g' ./common/arch/arm64/configs/gki_defconfig
+          hash1=$(git rev-parse HEAD | cut -c1-13)
+          
+          hash2=$(git rev-parse HEAD^ | cut -c1-10)
+          
+          kmi="-android15-8-g${hash1}-${hash2}-4k"
+          echo "KMI=$kmi"
+          
+          sed -i "\$s|echo \"\$res\"|echo \"$kmi\"|" ./common/scripts/setlocalversion
+          
+          sed -i "/^CONFIG_LOCALVERSION=/ s/=\"[^\"]*\"/=\"${kmi}\"/" ./common/arch/arm64/configs/gki_defconfig
+          
+          #sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
+          #sudo sed -i 's/-4k/-android15-8-g7f19c751e334-ab13222567-4k/g' ./common/arch/arm64/configs/gki_defconfig
       
       - name: Build with retry
         uses: nick-fields/retry@v3
