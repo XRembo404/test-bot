@@ -517,3 +517,4 @@ jobs:
                   *.img
                   *.zip
           caption-path: release.txt
+          parse-mode: MarkdownV2
