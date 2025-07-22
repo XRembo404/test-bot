@@ -313,9 +313,29 @@ jobs:
       - name: Add Configuration Settings
         run: |
           cd kernel_workspace
+          FILE="./common/arch/arm64/configs/gki_defconfig"
 
+          set_config() {
+            KEY="$1"
+            VALUE="$2"
+
+            if grep -q "^$KEY=" "$FILE"; then
+              CURRENT_VALUE=$(grep "^$KEY=" "$FILE" | head -n1 | cut -d '=' -f2)
+              if [ "$CURRENT_VALUE" != "$VALUE" ]; then
+                echo "Updating $KEY from $CURRENT_VALUE to $VALUE"
+                sed -i "s|^$KEY=.*|$KEY=$VALUE|" "$FILE"
+              else
+                echo "$KEY is already set to $VALUE — skipping"
+              fi
+            else
+              echo "Adding $KEY=$VALUE"
+              echo "$KEY=$VALUE" >> "$FILE"
+            fi
+          }
+          
           # Add KSU configuration settings
-          echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
+          set_config CONFIG_KSU y
+          #echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
           if [ "${{ inputs.kernelsu_variant }}" == "KernelSU-Next" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
@@ -380,7 +400,8 @@ jobs:
           # Add AutoFDO config
           echo "# AutoFDO (Feedback-Directed Optimization)" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_AUTOFDO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
-            
+          echo "CONFIG_WIREGUARD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
           if [ "${{ inputs.use_bbr }}" == "true" ]; then
             # BBR Configuration
             echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -495,23 +516,25 @@ jobs:
           
           EOF
           
-      # - name: Package files
-      #   run: |
-      #     echo "Packing files..."
-      #     cat > release.txt << 'EOF'
-      #     **New Build Published\!\!**
-      #     >KernelVer: ${{ inputs.android_version }}\-${{ inputs.kernel_version }}\.${{ env.SUBLEVEL }}
-      #     >DriverKSU: ${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})
-      #     ```Features:
-      #     [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
-      #     [+] LZ4 v1.10.0 (Optimization armv8a)
-      #     [+] TCP Pacing Tweaks
-      #     [+] Wireguard Support
-      #     [+] Magic Mount Support
-      #     [+] BBR + ECN Support
-      #     [+] TMPFS + RCU Support
-      #     ```
-      #     EOF
+      - name: Package files
+        run: |
+          echo "Packing files..."
+          ESCAPED_KERNEL_VER=$(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g')
+          ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
+          cat > release.txt << EOF
+          \*\*New Build Published\!\!\*\*
+          >KernelVer: $ESCAPED_KERNEL_VER
+          >DriverKSU: $ESCAPED_KSU_VARIANT
+          ```Features:
+          [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
+          [+] LZ4 v1.10.0 (Optimization armv8a)
+          [+] TCP Pacing Tweaks
+          [+] Wireguard Support
+          [+] Magic Mount Support
+          [+] BBR + ECN Support
+          [+] TMPFS + RCU Support
+          ```
+          EOF
           
       - name: Upload to telegram
         uses: puernya/tg-bot-upload@main
