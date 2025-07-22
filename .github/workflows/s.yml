@@ -503,12 +503,12 @@ jobs:
       - name: Package files
         run: |
           echo "Packing files..."
-          ESCAPED_KERNEL_VER=$(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g')
-          ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
-          cat > release.txt << EOF
+          ESCAPED_KERNEL_VER=$(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g') >> $GITHUB_ENV
+          ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g') >> $GITHUB_ENV
+          cat > release.txt << 'EOF'
           **New Build Published\!\!**
-          >KernelVer: $ESCAPED_KERNEL_VER
-          >DriverKSU: $ESCAPED_KSU_VARIANT
+          >KernelVer: ${{ env.ESCAPED_KERNEL_VER }}
+          >DriverKSU: ${{ env.ESCAPED_KSU_VARIANT }}
           ```
           [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
           [+] LZ4 v1.10.0 (Optimization armv8a)
