@@ -333,86 +333,84 @@ jobs:
             fi
           }
           
-          # Add KSU configuration settings
+          # KSU Configuration
           set_config CONFIG_KSU y
-          #echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
           if [ "${{ inputs.kernelsu_variant }}" == "KernelSU-Next" ]; then
-            echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
+            set_config CONFIG_KSU_KPROBES_HOOK n
+            set_config CONFIG_KSU_SUSFS_SUS_SU n
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU-Ultra" ]; then
             if [ "${{ inputs.ak3_kpm }}" == "true" ]; then
-              echo "CONFIG_KPM=y" >> ./common/arch/arm64/configs/gki_defconfig
+              set_config CONFIG_KPM y
             fi
-            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
+            set_config CONFIG_KSU_SUSFS_SUS_SU n
+            set_config CONFIG_KSU_MANUAL_HOOK y
           fi
 
-          # Hibernation Settings
-          echo "CONFIG_HIBERNATION=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_HIBERNATION_COMPRESS=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_HIBERNATION_COMPRESS_ALGO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-          
           # Enable advanced compression support
-          echo "CONFIG_CRYPTO_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          set_config CONFIG_CRYPTO_LZ4 y
+          set_config CONFIG_CRYPTO_LZ4HC y
           
           # File system level compression support
-          echo "CONFIG_F2FS_FS_COMPRESSION=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_F2FS_FS_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_F2FS_FS_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          
+          set_config CONFIG_F2FS_FS_COMPRESSION y
+          set_config CONFIG_F2FS_FS_LZ4 y
+          set_config CONFIG_F2FS_FS_LZ4HC y
+
           # Kernel image compression configuration
-          echo "CONFIG_KERNEL_LZ4=y" >> ./common/arch/arm64/configs/gki_defconfig
-            
+          set_config CONFIG_KERNEL_LZ4 y
+          
+          # Hibernation Configuration
+          set_config CONFIG_HIBERNATION y
+          set_config CONFIG_HIBERNATION_COMPRESS y
+          set_config CONFIG_HIBERNATION_COMPRESS_ALGO_LZ4 y
+          
           # TMPFS Configuration
-          echo "CONFIG_RCU_TRACE=n" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
+          set_config CONFIG_RCU_TRACE n
+          set_config CONFIG_TMPFS_XATTR y
+          set_config CONFIG_TMPFS_POSIX_ACL y
 
           # NF Configuration
-          echo "CONFIG_IP_NF_TARGET_TTL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_TARGET_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_MATCH_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_NF_TARGET_ECN=y" >> ./common/arch/arm64/configs/gki_defconfig
+          set_config CONFIG_IP_NF_TARGET_TTL y
+          set_config CONFIG_IP6_NF_TARGET_HL y
+          set_config CONFIG_IP6_NF_MATCH_HL y
+          set_config CONFIG_IP_NF_TARGET_ECN y
           
-          #ECN Configuration
-          echo "CONFIG_IP_ECN=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TCP_ECN=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IPV6_ECN=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # ECN Configuration
+          set_config CONFIG_IP_ECN y
+          set_config CONFIG_TCP_ECN y
+          set_config CONFIG_IPV6_ECN y
           
-          # SUSFS Configuration 
-          echo "CONFIG_KSU_SUSFS=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # SUSFS Configuration
+          set_config CONFIG_KSU_SUSFS y
+          set_config CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT y
+          set_config CONFIG_KSU_SUSFS_SUS_PATH y
+          set_config CONFIG_KSU_SUSFS_SUS_MOUNT y
+          set_config CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT y
+          set_config CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT y
+          set_config CONFIG_KSU_SUSFS_SUS_KSTAT y
+          set_config CONFIG_KSU_SUSFS_SUS_OVERLAYFS n
+          set_config CONFIG_KSU_SUSFS_TRY_UMOUNT y
+          set_config CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT y
+          set_config CONFIG_KSU_SUSFS_SPOOF_UNAME y
+          set_config CONFIG_KSU_SUSFS_ENABLE_LOG y
+          set_config CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS y
+          set_config CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG y
+          set_config CONFIG_KSU_SUSFS_OPEN_REDIRECT y
 
-          # Add AutoFDO config
-          echo "# AutoFDO (Feedback-Directed Optimization)" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_AUTOFDO_CLANG=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_WIREGUARD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # AutoFDO Configuration (Feedback-Directed Optimization)
+          set_config CONFIG_AUTOFDO_CLANG y
+          set_config CONFIG_WIREGUARD y
           
           if [ "${{ inputs.use_bbr }}" == "true" ]; then
             # BBR Configuration
-            echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_TCP_CONG_CUBIC=n" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_DEFAULT_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
+            set_config CONFIG_TCP_CONG_ADVANCED y
+            set_config CONFIG_TCP_CONG_BBR y
+            set_config CONFIG_NET_SCH_FQ y
+            set_config CONFIG_TCP_CONG_BIC n
+            set_config CONFIG_TCP_CONG_CUBIC n
+            set_config CONFIG_TCP_CONG_WESTWOOD n
+            set_config CONFIG_TCP_CONG_HTCP n
+            set_config CONFIG_DEFAULT_BBR y
+            set_config CONFIG_DEFAULT_TCP_CONG bbr
           fi
           
           # Remove check_defconfig
