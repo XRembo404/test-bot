@@ -494,7 +494,7 @@ jobs:
       #     echo "Packing files..."
       #     cat > release.txt << 'EOF'
       #     **New Build Published\!\!**
-      #     >KernelVer: ${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
+      #     >KernelVer: ${{ inputs.android_version }}\-${{ inputs.kernel_version }}\.${{ env.SUBLEVEL }}
       #     >DriverKSU: ${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})
       #     ```Features:
       #     [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
@@ -517,4 +517,3 @@ jobs:
                   *.img
                   *.zip
           caption-path: release.txt
-          parse-mode: MarkdownV2
