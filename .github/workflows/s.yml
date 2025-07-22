@@ -546,12 +546,11 @@ jobs:
           EOF
           
       - name: Upload to telegram
-        uses: puernya/tg-bot-upload@main
+        uses: puernya/tg-bot-upload@v1
         with:
           bot-id: ${{ secrets.BOT_ID }}
           chat-id: ${{ secrets.CHAT_ID }}
           topic-id: ${{ secrets.TOPIC_ID }} 
           file-path: |
-                  *.img
                   *.zip
           caption-path: release.txt
