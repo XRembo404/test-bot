@@ -483,13 +483,15 @@ jobs:
       - name: Package files
         run: |
           echo "Packing files..."
-          ESCAPED_KERNEL_VER=$(echo "${{ inputs.kernel_version }}" | sed 's/\./\\./g')
-          ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }}" | sed 's/-/\\-/g')
+          ESCAPED_KERNEL_VER=$(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g')
+          ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
+          #ESCAPED_KERNEL_VER=$(echo "${{ inputs.kernel_version }}" | sed 's/\./\\./g')
+          #ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }}" | sed 's/-/\\-/g')
           cat > release.txt << 'EOF'
           **New Build Published\!\!**
           
-          >KernelVer: ${{ inputs.android_version }}\-$ESCAPED_KERNEL_VER\.${{ env.SUBLEVEL }}
-          >DriverKSU: $ESCAPED_KSU_VARIANT (${{ env.KSUVER }})
+          >KernelVer: $ESCAPED_KERNEL_VER
+          >DriverKSU: $ESCAPED_KSU_VARIANT
           
           EOF
           
