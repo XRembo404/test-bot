@@ -485,7 +485,7 @@ jobs:
           echo "Packing files..."
           cat > release.txt << 'EOF'
           **New Build Published\!\!**
-          >KernelVer: ${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
+          >KernelVer: ${{ inputs.android_version }}\-${{ inputs.kernel_version }}\.${{ env.SUBLEVEL }}
           >DriverKSU: ${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})
           EOF
           
