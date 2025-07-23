@@ -43,11 +43,6 @@ on:
         required: true
         type: boolean
         default: true
-      boot_nokpm:
-        description: 'Generate boot without KPM?'
-        required: true
-        type: boolean
-        default: false
       ak3_kpm:
         description: 'Generate AK3 with KPM? (disable this if you want only AK3 without KPM)'
         required: true
@@ -112,43 +107,7 @@ jobs:
           restore-keys: |
             ccache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
             ccache-${{ runner.os }}-${{ inputs.android_version }}-
-
-      - name: Cache toolchain
-        if: ${{ inputs.boot_nokpm }}
-        id: cache-toolchain
-        uses: actions/cache@v4
-        with:
-          path: |
-            kernel-build-tools
-            mkbootimg
-          key: toolchain-${{ runner.os }}-v1
-
-      - name: Download toolchain (if cache was not found)
-        if: ${{ inputs.boot_nokpm && steps.cache-toolchain.outputs.cache-hit != 'true' }}
-        run: |
-          git clone https://android.googlesource.com/kernel/prebuilts/build-tools -b main-kernel-build-2024 --depth 1 kernel-build-tools
-          git clone https://android.googlesource.com/platform/system/tools/mkbootimg -b main-kernel-build-2024 --depth 1 mkbootimg
-          
-      - name: Set toolchain
-        if: ${{ inputs.boot_nokpm }}
-        run: |
-          echo "AVBTOOL=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin/avbtool" >> $GITHUB_ENV
-          echo "MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py" >> $GITHUB_ENV
-          
-      - name: Set boot sign key
-        if: ${{ inputs.boot_nokpm }}
-        env:
-          BOOT_SIGN_KEY: ${{ secrets.BOOT_SIGN_KEY }}
-        run: |
-          if [ ! -z "$BOOT_SIGN_KEY" ]; then
-            echo "$BOOT_SIGN_KEY" > ./kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
-            echo "BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem" >> $GITHUB_ENV
-          else
-            echo "BOOT_SIGN_KEY is not set. Using AOSP sign key..."
-            openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 > ./kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
-            echo "BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem" >> $GITHUB_ENV
-          fi
-            
+      
       - name: Install Repo
         run: |
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
@@ -458,7 +417,7 @@ jobs:
             make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2 gki_defconfig || { echo "make defconfig failed"; exit 1; }
             make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2 Image || { echo "make failed"; exit 1; }
 
-      - name: Build Boot Image & Make AnyKernel3 (without KPM)
+      - name: Make AnyKernel3 (without KPM)
         run: |
           git clone https://github.com/$REPO_OWNER/AnyKernel3.git --depth=1 AnyKernel3_NoKPM
           rm -rf ./AnyKernel3_NoKPM/.git
@@ -467,12 +426,6 @@ jobs:
           ZIP_NAME="AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.zip"
           cp ../kernel_workspace/common/out/arch/arm64/boot/Image ./Image
           zip -q -r "../$ZIP_NAME" ./*
-          if [ "${{ inputs.boot_nokpm }}" == "true" ]; then
-            BOOT_NAME="Boot_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.img"
-            $MKBOOTIMG --header_version 4 --kernel Image --output $BOOT_NAME
-            $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image $BOOT_NAME --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-            mv ./$BOOT_NAME $GITHUB_WORKSPACE/
-          fi
           
       - name: Upload AnyKernel3 (without KPM)
         if: ${{ !inputs.boot_nokpm }}
@@ -480,15 +433,6 @@ jobs:
         with:
           name: AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
           path: ./AnyKernel3_NoKPM/*
-          
-      - name: Upload Boot & AnyKernel3 (without KPM)
-        if: ${{ inputs.boot_nokpm }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.kernelsu_variant }}_kernel-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
-          path: |
-            *.zip
-            *.img
             
       - name: Apply KPM Patch & Make AnyKernel3 (with KPM) (SukiSU only)
         if: ${{ inputs.ak3_kpm && inputs.kernelsu_variant == 'SukiSU-Ultra' }}
@@ -504,7 +448,8 @@ jobs:
          chmod +x patch_linux
          ./patch_linux
          rm -f Image
-         mv oImage $GITHUB_WORKSPACE/AnyKernel3_NoKPM/Image
+         mv oImage Image
+         cp ./Image ..$GITHUB_WORKSPACE/AnyKernel3_KPM/Image
          
       - name: Upload AnyKernel3 (with KPM)
         if: ${{ inputs.ak3_kpm && inputs.kernelsu_variant == 'SukiSU-Ultra' }}
