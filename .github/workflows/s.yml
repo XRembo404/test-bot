@@ -437,7 +437,10 @@ jobs:
          git clone https://github.com/$REPO_OWNER/AnyKernel3.git --depth=1 AnyKernel3_KPM  
          rm -rf ./AnyKernel3_KPM/.git
          rm -rf ./AnyKernel3_KPM/push.sh
-         cp kernel_workspace/common/out/arch/arm64/boot/Image ./AnyKernel3_KPM/
+         cd ./AnyKernel3_KPM
+         ZIP_NAME="AnyKernel3_${{ env.BRANCH_NAME }}_KPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.zip"
+         cp ../kernel_workspace/common/out/arch/arm64/boot/Image ./Image
+         zip -q -r "../$ZIP_NAME" ./*
      
       - name: 📤 Upload AnyKernel3 (with KPM)
         if: ${{ inputs.ak3_kpm && inputs.kernelsu_variant == 'SukiSU-Ultra' }}
