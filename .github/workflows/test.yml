@@ -15,7 +15,7 @@ jobs:
           echo "Packing files..."
           cat > release.txt << 'EOF'
           **New Build Published\!\!**
-          >KernelVer: android1556698ahsbfkjhab
+          >KernelVer: android1556698ah...sbfkjhab
           >DriverKSU: SukiSUuUltraagsdjifbiajf
           ```Features:
           [+] SUSFS ඞ v1.5.9
