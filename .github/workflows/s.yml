@@ -395,7 +395,7 @@ jobs:
           # sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
           # sudo sed -i 's/-4k/-android15-8-g7f19c751e334-ab13222567-4k/g' ./common/arch/arm64/configs/gki_defconfig
       
-      - name: Build with retry
+      - name: 🔨 Build with retry
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 30
@@ -417,7 +417,7 @@ jobs:
             make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2 gki_defconfig || { echo "make defconfig failed"; exit 1; }
             make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2 Image || { echo "make failed"; exit 1; }
 
-      - name: Make AnyKernel3 (without KPM)
+      - name: 📦 Make AnyKernel3 (without KPM)
         run: |
           git clone https://github.com/$REPO_OWNER/AnyKernel3.git --depth=1 AnyKernel3_NoKPM
           rm -rf ./AnyKernel3_NoKPM/.git
@@ -427,31 +427,33 @@ jobs:
           cp ../kernel_workspace/common/out/arch/arm64/boot/Image ./Image
           zip -q -r "../$ZIP_NAME" ./*
           
-      - name: Upload AnyKernel3 (without KPM)
+      - name: 📤 Upload AnyKernel3 (without KPM)
         if: ${{ !inputs.boot_nokpm }}
         uses: actions/upload-artifact@v4
         with:
           name: AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
           path: ./AnyKernel3_NoKPM/*
-            
-      - name: Apply KPM Patch & Make AnyKernel3 (with KPM) (SukiSU only)
+
+      - name: 📦 Apply KPM Patch (SukiSU only)
+        run: |
+          cd kernel_workspace/common/out/arch/arm64/boot
+          TAG=$(curl -s https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases | \jq -r 'map(select(.prerelease)) | first | .tag_name')
+          echo "Latest tag is: $TAG"
+          curl -LSs -o patch_linux "https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/$TAG/patch_linux"
+          chmod +x patch_linux
+          ./patch_linux
+          rm -f Image
+          mv oImage Image
+         
+      - name: 📦 Make AnyKernel3 (with KPM) 
         if: ${{ inputs.ak3_kpm && inputs.kernelsu_variant == 'SukiSU-Ultra' }}
         run: |
          git clone https://github.com/$REPO_OWNER/AnyKernel3.git --depth=1 AnyKernel3_KPM  
          rm -rf ./AnyKernel3_KPM/.git
          rm -rf ./AnyKernel3_KPM/push.sh
-         
-         cd kernel_workspace/common/out/arch/arm64/boot
-         TAG=$(curl -s https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases | \jq -r 'map(select(.prerelease)) | first | .tag_name')
-         echo "Latest tag is: $TAG"
-         curl -LSs -o patch_linux "https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/$TAG/patch_linux"
-         chmod +x patch_linux
-         ./patch_linux
-         rm -f Image
-         mv oImage Image
-         cp ./Image ..$GITHUB_WORKSPACE/AnyKernel3_KPM/Image
-         
-      - name: Upload AnyKernel3 (with KPM)
+         cp kernel_workspace/common/out/arch/arm64/boot/Image ./AnyKernel3_KPM/
+     
+      - name: 📤 Upload AnyKernel3 (with KPM)
         if: ${{ inputs.ak3_kpm && inputs.kernelsu_variant == 'SukiSU-Ultra' }}
         uses: actions/upload-artifact@v4
         with:
