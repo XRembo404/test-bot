@@ -13,6 +13,7 @@ jobs:
       - name: Package files
         run: |
           echo "Packing files..."
+          ls -al
           cat > release.txt << 'EOF'
           **New Build Published\!\!**
           >KernelVer: android1556698ah...sbfkjhab
