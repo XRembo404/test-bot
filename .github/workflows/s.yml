@@ -454,8 +454,8 @@ jobs:
           ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
           cat > release.txt << 'EOF'
           **New Build Published\!\!**
-          >KernelVer: $(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g')
-          >DriverKSU: $(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
+          >KernelVer: $ESCAPED_KERNEL_VER
+          >DriverKSU: $ESCAPED_KSU_VARIANT
           ```Features:
           [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
           [+] LZ4 v1.10.0 (Optimization armv8a)
@@ -466,6 +466,8 @@ jobs:
           [+] TMPFS + RCU Support
           ```
           EOF
+          sed -i "s|\$ESCAPED_KERNEL_VER|$ESCAPED_KERNEL_VER|g" release.txt
+          sed -i "s|\$ESCAPED_KSU_VARIANT|$ESCAPED_KSU_VARIANT|g" release.txt
           
       - name: Upload to telegram
         uses: puernya/tg-bot-upload@v1
