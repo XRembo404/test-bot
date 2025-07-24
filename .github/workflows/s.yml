@@ -43,8 +43,8 @@ on:
         required: true
         type: boolean
         default: true
-      ak3_kpm:
-        description: 'Generate AK3 with KPM? (disable this if you want only AK3 without KPM)'
+      use_kpm:
+        description: 'Enable the KPM Patch?'
         required: true
         type: boolean
         default: false
@@ -72,7 +72,6 @@ jobs:
 
       - name: Setup APT Cache Path
         run: |
-          echo "REPO_OWNER=XRembo404" >> $GITHUB_ENV
           echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
           mkdir -p $HOME/apt-cache
           
@@ -139,7 +138,8 @@ jobs:
         run: |
           # Clone repositories
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}
-          git clone https://github.com/$REPO_OWNER/kernel_patches.git
+          git clone https://github.com/xrembo404/kernel_patches.git
+          git clone https://github.com/xrembo404/AnyKernel3.git
           
           cd kernel_workspace
           if [ "${{ inputs.kernelsu_variant }}" == "KernelSU-Next" ]; then
@@ -298,8 +298,10 @@ jobs:
             set_config CONFIG_KSU_KPROBES_HOOK n
             set_config CONFIG_KSU_SUSFS_SUS_SU n
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU-Ultra" ]; then
-            if [ "${{ inputs.ak3_kpm }}" == "true" ]; then
+            if [ "${{ inputs.use_kpm }}" == "true" ]; then
               set_config CONFIG_KPM y
+              set_config CONFIG_KALLSYMS y
+              set_config CONFIG_KALLSYMS_ALL y
             fi
             set_config CONFIG_KSU_SUSFS_SUS_SU n
             set_config CONFIG_KSU_MANUAL_HOOK y
@@ -403,24 +405,8 @@ jobs:
             make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2 gki_defconfig || { echo "make defconfig failed"; exit 1; }
             make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2 Image || { echo "make failed"; exit 1; }
 
-      - name: 📦 Make AnyKernel3 (without KPM)
-        run: |
-          git clone https://github.com/$REPO_OWNER/AnyKernel3.git --depth=1 AnyKernel3_NoKPM
-          rm -rf ./AnyKernel3_NoKPM/.git
-          rm -rf ./AnyKernel3_NoKPM/push.sh
-          cd ./AnyKernel3_NoKPM
-          ZIP_NAME="AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.zip"
-          cp ../kernel_workspace/common/out/arch/arm64/boot/Image ./Image
-          zip -q -r "../$ZIP_NAME" ./*
-          
-      - name: 📤 Upload AnyKernel3 (without KPM)
-        if: ${{ !inputs.boot_nokpm }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
-          path: ./AnyKernel3_NoKPM/*
-
       - name: 📦 Apply KPM Patch (SukiSU only)
+        if: ${{ inputs.use_kpm }}
         run: |
           cd kernel_workspace/common/out/arch/arm64/boot
           TAG=$(curl -s https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases | \jq -r 'map(select(.prerelease)) | first | .tag_name')
@@ -430,37 +416,31 @@ jobs:
           ./patch_linux
           rm -f Image
           mv oImage Image
-         
-      - name: 📦 Make AnyKernel3 (with KPM) 
-        if: ${{ inputs.ak3_kpm && inputs.kernelsu_variant == 'SukiSU-Ultra' }}
+          
+      - name: 📦 Make AnyKernel3
         run: |
-         git clone https://github.com/$REPO_OWNER/AnyKernel3.git --depth=1 AnyKernel3_KPM  
-         rm -rf ./AnyKernel3_KPM/.git
-         rm -rf ./AnyKernel3_KPM/push.sh
-         cd ./AnyKernel3_KPM
-         ZIP_NAME="AnyKernel3_${{ env.BRANCH_NAME }}_KPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.zip"
-         cp ../kernel_workspace/common/out/arch/arm64/boot/Image ./Image
-         zip -q -r "../$ZIP_NAME" ./*
-     
-      - name: 📤 Upload AnyKernel3 (with KPM)
-        if: ${{ inputs.ak3_kpm && inputs.kernelsu_variant == 'SukiSU-Ultra' }}
+          cd ./AnyKernel3
+          ZIP_NAME="AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.zip"
+          mv ../kernel_workspace/common/out/arch/arm64/boot/Image ./Image
+          zip -q -r "../$ZIP_NAME" ./*
+          
+      - name: 📤 Upload AnyKernel3
         uses: actions/upload-artifact@v4
         with:
-         name: AnyKernel3_${{ env.BRANCH_NAME }}_KPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
-         path: ./AnyKernel3_KPM/*
-          
+          name: AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
+          path: ./AnyKernel3/*
+
       - name: Package files
         run: |
           echo "Packing files..."
-          ls -al
           ESCAPED_KERNEL_VER=$(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g')
           ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
+          
           cat > release.txt << EOF
           **New Build Published\!\!**
           >KernelVer: $ESCAPED_KERNEL_VER
           >DriverKSU: $ESCAPED_KSU_VARIANT
           EOF
-          
           cat >> release.txt << 'EOF'
           ```Features:
           [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
