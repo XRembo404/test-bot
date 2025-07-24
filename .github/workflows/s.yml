@@ -299,9 +299,14 @@ jobs:
             set_config CONFIG_KSU_SUSFS_SUS_SU n
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU-Ultra" ]; then
             if [ "${{ inputs.use_kpm }}" == "true" ]; then
+              KPM="KPM"
+              echo "MODEKPM=$KPM" >> $GITHUB_ENV
               set_config CONFIG_KPM y
               set_config CONFIG_KALLSYMS y
               set_config CONFIG_KALLSYMS_ALL y
+            else
+              NOKPM="NoKPM"
+              echo "MODEKPM=$NOKPM" >> $GITHUB_ENV
             fi
             set_config CONFIG_KSU_SUSFS_SUS_SU n
             set_config CONFIG_KSU_MANUAL_HOOK y
@@ -420,14 +425,14 @@ jobs:
       - name: 📦 Make AnyKernel3
         run: |
           cd ./AnyKernel3
-          ZIP_NAME="AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.zip"
+          ZIP_NAME="AnyKernel3_${{ env.BRANCH_NAME }}_${{ env.MODEKPM }}_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}.zip"
           mv ../kernel_workspace/common/out/arch/arm64/boot/Image ./Image
           zip -q -r "../$ZIP_NAME" ./*
           
       - name: 📤 Upload AnyKernel3
         uses: actions/upload-artifact@v4
         with:
-          name: AnyKernel3_${{ env.BRANCH_NAME }}_NoKPM_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
+          name: AnyKernel3_${{ env.BRANCH_NAME }}_${{ env.MODEKPM }}_${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}
           path: ./AnyKernel3/*
 
       - name: Package files
@@ -435,12 +440,12 @@ jobs:
           echo "Packing files..."
           ESCAPED_KERNEL_VER=$(echo "${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.SUBLEVEL }}" | sed -e 's/\./\\./g' -e 's/-/\\-/g')
           ESCAPED_KSU_VARIANT=$(echo "${{ inputs.kernelsu_variant }} (${{ env.KSUVER }})" | sed -e 's/\./\\./g' -e 's/-/\\-/g' -e 's/(/\\(/g' -e 's/)/\\)/g')
-          
           cat > release.txt << EOF
           **New Build Published\!\!**
           >KernelVer: $ESCAPED_KERNEL_VER
           >DriverKSU: $ESCAPED_KSU_VARIANT
           EOF
+          
           cat >> release.txt << 'EOF'
           ```Features:
           [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
