@@ -127,7 +127,14 @@ jobs:
                 -o Dir::State::lists="${{ env.APT_META_CACHE }}" \
             install -yq --no-install-recommends \
             ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
-      
+
+      - name: Bersihkan File Tak Bisa Di-cache
+        run: |
+          rm -f ${{ env.APT_CACHE_DIR }}/archives/lock
+          rm -f ${{ env.APT_CACHE_DIR }}/lists/lock
+          rm -rf ${{ env.APT_CACHE_DIR }}/archives/partial
+          rm -rf ${{ env.APT_CACHE_DIR }}/lists/partial
+    
       - name: Tampilkan Isi Cache (Optional)
         run: |
           echo "=== .deb Files ==="
