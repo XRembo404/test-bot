@@ -261,6 +261,7 @@ jobs:
       - name: Add Configuration Settings
         run: |
           cd kernel_workspace
+          curl -LSs https://github.com/$GITHUB_REPOSITORY/raw/main/.github/workflows/setup.sh -o setup.sh
           FILE="./common/arch/arm64/configs/gki_defconfig"
 
           set_config() {
@@ -294,6 +295,7 @@ jobs:
               set_config CONFIG_KPM y
               set_config CONFIG_KALLSYMS y
               set_config CONFIG_KALLSYMS_ALL y
+              set_config CONFIG_KALLSYMS_BASE_RELATIVE y
             else
               NOKPM="NoKPM"
               echo "MODEKPM=$NOKPM" >> $GITHUB_ENV
@@ -368,42 +370,37 @@ jobs:
             # set_config CONFIG_TCP_CONG_HTCP y
             # set_config CONFIG_TCP_CONG_NV y
             # set_config CONFIG_TCP_CONG_BRUTAL y
-            # set_config CONFIG_DEFAULT_TCP_CONG bbr
-            set_config CONFIG_DEFAULT_BBR y
+            set_config CONFIG_DEFAULT_TCP_CONG bbr
+            # set_config CONFIG_DEFAULT_BBR y
           fi
 
-          # Turn on the enhanced Netfilter firewall extension module to support matching rules based on address type, enable IP collection support, improve the flexibility of firewall rules, and support more complex traffic filtering strategies.
-          echo "CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NETFILTER_XT_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # Enables the IP set framework and its multiple data structure implementations to provide efficient large-scale IP address management, improve firewall rule processing efficiency, and reduce memory usage
-          echo "CONFIG_IP_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_MAX=65534" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_BITMAP_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_BITMAP_PORT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_IPMARK=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_IPPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_IPPORTIP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_IPPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_MAC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_NETPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_NET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_NETNET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_NETPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP_SET_LIST_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # Enable IPv6 network address translation
-          echo "CONFIG_IP6_NF_NAT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_TARGET_MASQUERADE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          #由于部分机型的vintf兼容性检测规则，在开启CONFIG_IP6_NF_NAT后开机会出现"您的设备内部出现了问题。请联系您的设备制造商了解详情。"的提示，故添加一个配置修复补丁，在编译内核时隐藏CONFIG_IP6_NF_NAT=y但不影响对应功能编译
-          cd common
-          wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/other_patch/config.patch
-          patch -p1 -F 3 < config.patch || true
+          # More Configuration
+          set_config CONFIG_NETFILTER_XT_MATCH_ADDRTYPE y
+          set_config CONFIG_NETFILTER_XT_SET y
+          set_config CONFIG_IP_SET y
+          set_config CONFIG_IP_SET_MAX 65534
+          set_config CONFIG_IP_SET_BITMAP_IP y
+          set_config CONFIG_IP_SET_BITMAP_IPMAC y
+          set_config CONFIG_IP_SET_BITMAP_PORT y
+          set_config CONFIG_IP_SET_HASH_IP y
+          set_config CONFIG_IP_SET_HASH_IPMARK y
+          set_config CONFIG_IP_SET_HASH_IPPORT y
+          set_config CONFIG_IP_SET_HASH_IPPORTIP y
+          set_config CONFIG_IP_SET_HASH_IPPORTNET y
+          set_config CONFIG_IP_SET_HASH_IPMAC y
+          set_config CONFIG_IP_SET_HASH_MAC y
+          set_config CONFIG_IP_SET_HASH_NETPORTNET y
+          set_config CONFIG_IP_SET_HASH_NET y
+          set_config CONFIG_IP_SET_HASH_NETNET y
+          set_config CONFIG_IP_SET_HASH_NETPORT y
+          set_config CONFIG_IP_SET_HASH_NETIFACE y
+          set_config CONFIG_IP_SET_LIST_SET y
+          set_config CONFIG_IP6_NF_NAT y
+          set_config CONFIG_IP6_NF_IPTABLES y
+          set_config CONFIG_IP6_NF_TARGET_MASQUERADE y
             
           # Remove check_defconfig
-          sed -i 's/check_defconfig//' ./build.config.gki
+          sed -i 's/check_defconfig//' ./common/build.config.gki
 
       - name: Change Kernel Name
         run: |
