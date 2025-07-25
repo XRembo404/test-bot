@@ -103,6 +103,7 @@ jobs:
           echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
           mkdir -p $HOME/apt-cache/archives/partial
           mkdir -p $HOME/apt-cache/lists/partial
+          chmod -R a+rx $HOME/apt-cache
       
       - name: Restore APT Cache
         uses: actions/cache@v3
@@ -130,7 +131,7 @@ jobs:
       - name: List Cached .deb Packages
         run: |
           echo "📦 Daftar file .deb yang tersimpan di cache:"
-          find "${{ env.APT_CACHE_DIR }}/archives" -type f -name '*.deb' -exec ls -lh {} +
+          find "${{ env.APT_CACHE_DIR }}/archives" -maxdepth 1 -type f -name '*.deb' -exec ls -lh {} +
 
       # Simpan daftar ke file
       - name: Simpan dan tampilkan daftar file .deb
