@@ -100,10 +100,10 @@ jobs:
           
       - name: Setup APT Cache Path
         run: |
+          mkdir -p "$HOME/apt-cache/archives/partial"
+          mkdir -p "$HOME/apt-cache/lists/partial"
           echo "APT_DEB_CACHE=$HOME/apt-cache/archives" >> $GITHUB_ENV
           echo "APT_META_CACHE=$HOME/apt-cache/lists" >> $GITHUB_ENV
-          mkdir -p "$APT_DEB_CACHE/partial"
-          mkdir -p "$APT_META_CACHE/partial"
 
       - name: Restore APT Cache (.deb + metadata)
         uses: actions/cache@v3
