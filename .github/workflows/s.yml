@@ -144,10 +144,11 @@ jobs:
 
       - name: Fetch kernel repos
         run: |
-          git clone https://github.com/xrembo404/test-bot.git
-          chmod +x s.sh
+          curl -LSs https://github.com/$GITHUB_REPOSITORY/raw/main/.github/workflows/se.sh -o se.sh
+          ls -al
+          chmod +x se.sh
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
-          ./s.sh "$FORMATTED_BRANCH"
+          ./se.sh "$FORMATTED_BRANCH"
     
       - name: Add KernelSU & Apply SUSFS Patches
         run: |
