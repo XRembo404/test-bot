@@ -78,7 +78,7 @@ jobs:
           sudo rm -rf /var/lib/man-db/auto-update
           sudo apt update
           sudo apt-get install -y --no-install-recommends \
-            ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
+            ccache python3 git curl build-essential libssl-dev bison flex libelf-dev jq
           
       - name: Set ccache
         run: |
@@ -434,7 +434,7 @@ jobs:
         if: ${{ inputs.use_kpm }}
         run: |
           cd kernel_workspace/common/out/arch/arm64/boot
-          TAG=$(curl -s https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases | \jq -r 'map(select(.prerelease)) | first | .tag_name')
+          TAG=$(curl -s https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases | jq -r 'map(select(.prerelease == false and .draft == false)) | first | .tag_name')
           echo "Latest tag is: $TAG"
           curl -LSs -o patch_linux "https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/$TAG/patch_linux"
           chmod +x patch_linux
