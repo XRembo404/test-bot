@@ -70,30 +70,39 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
 
-      - name: Setup APT Cache Path
-        run: |
-          echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
-          mkdir -p $HOME/apt-cache
+      # - name: Setup APT Cache Path
+      #   run: |
+      #     echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
+      #     mkdir -p $HOME/apt-cache
           
-      - name: Restore APT Cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.APT_CACHE_DIR }}
-          key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
-          restore-keys: |
-            apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
-            apt-cache-${{ runner.os }}-${{ inputs.android_version }}-
+      # - name: Restore APT Cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{ env.APT_CACHE_DIR }}
+      #     key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
+      #     restore-keys: |
+      #       apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
+      #       apt-cache-${{ runner.os }}-${{ inputs.android_version }}-
       
       - name: Install Dependencies
         run: |
-          sudo apt update -o Dir::Cache="${{ env.APT_CACHE_DIR }}" -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
+          sudo apt-mark hold firefox
+          sudo apt-mark hold libc-bin
+          sudo apt-mark hold man-db
+          sudo rm -rf /var/lib/man-db/auto-update
+          sudo apt update
+          sudo apt-get install -y --no-install-recommends \
             ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
+            # curl bison flex make binutils git perl gcc python3 \
+            # python-is-python3 bc libssl-dev libelf-dev \
+            # bc aria2 zip unzip ccache
+          # sudo apt update -o Dir::Cache="${{ env.APT_CACHE_DIR }}" -qq
+          # sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
             
       - name: Set ccache
         run: |
           ccache --version
-          ccache --max-size=2G
+          ccache --max-size=3G
           ccache --set-config=compression=true
           echo "CCACHE_DIR=$HOME/.ccache_${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}" >> $GITHUB_ENV
           mkdir -p $HOME/.ccache_${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
@@ -117,6 +126,8 @@ jobs:
         run: |
           mkdir kernel_workspace && cd kernel_workspace
 
+          aria2c -s16 -x16 -k1M https://your-host.com/kernel_repo_android15-6.6-lts.tar.gz
+          tar -xzf kernel_repo_android15-6.6-lts.tar.gz
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
           repo init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
@@ -295,7 +306,8 @@ jobs:
           # KSU Configuration
           set_config CONFIG_KSU y
           if [ "${{ inputs.kernelsu_variant }}" == "KernelSU-Next" ]; then
-            set_config CONFIG_KSU_KPROBES_HOOK n
+            set_config CONFIG_KSU_KPROBES_HOOK y
+            set_config CONFIG_KSU_MANUAL_HOOK n
             set_config CONFIG_KSU_SUSFS_SUS_SU n
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU-Ultra" ]; then
             if [ "${{ inputs.use_kpm }}" == "true" ]; then
@@ -371,12 +383,15 @@ jobs:
             set_config CONFIG_TCP_CONG_ADVANCED y
             set_config CONFIG_TCP_CONG_BBR y
             set_config CONFIG_NET_SCH_FQ y
-            set_config CONFIG_TCP_CONG_BIC n
-            set_config CONFIG_TCP_CONG_CUBIC n
-            set_config CONFIG_TCP_CONG_WESTWOOD n
-            set_config CONFIG_TCP_CONG_HTCP n
-            set_config CONFIG_DEFAULT_BBR y
-            set_config CONFIG_DEFAULT_TCP_CONG bbr
+            # set_config CONFIG_TCP_CONG_BIC n
+            set_config CONFIG_TCP_CONG_CUBIC y
+            set_config CONFIG_TCP_CONG_WESTWOOD y
+            set_config CONFIG_TCP_CONG_HTCP y
+            set_config CONFIG_TCP_CONG_VEGAS y
+            set_config CONFIG_TCP_CONG_NV y
+            set_config CONFIG_TCP_CONG_BRUTAL y
+            set_config CONFIG_DEFAULT_TCP_CONG cubic
+            # set_config CONFIG_DEFAULT_BBR y
           fi
           
           # Remove check_defconfig
