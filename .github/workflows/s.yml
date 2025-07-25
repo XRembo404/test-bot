@@ -100,48 +100,37 @@ jobs:
           
       - name: Setup APT Cache Path
         run: |
-          mkdir -p "$HOME/apt-cache/archives/partial"
-          mkdir -p "$HOME/apt-cache/lists/partial"
-          echo "APT_DEB_CACHE=$HOME/apt-cache/archives" >> $GITHUB_ENV
-          echo "APT_META_CACHE=$HOME/apt-cache/lists" >> $GITHUB_ENV
-
-      - name: Restore APT Cache (.deb + metadata)
+          echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
+          mkdir -p $HOME/apt-cache/archives/partial
+          mkdir -p $HOME/apt-cache/lists/partial
+      
+      - name: Restore APT Cache
         uses: actions/cache@v3
         with:
-          path: |
-            ${{ env.APT_DEB_CACHE }}
-            ${{ env.APT_META_CACHE }}
-          key: apt-fullcache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
+          path: ${{ env.APT_CACHE_DIR }}
+          key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
           restore-keys: |
-            apt-fullcache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
-            apt-fullcache-${{ runner.os }}-${{ inputs.android_version }}-
+            apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
+            apt-cache-${{ runner.os }}-${{ inputs.android_version }}-
       
-      - name: Install Dependencies (cached .deb + metadata)
+      - name: Install Dependencies
         run: |
-          sudo apt -o Dir::Cache::archives="${{ env.APT_DEB_CACHE }}" \
-                   -o Dir::State::lists="${{ env.APT_META_CACHE }}" \
-                   update -qq
-                   
-          sudo DEBIAN_FRONTEND=noninteractive \
-            apt -o Dir::Cache::archives="${{ env.APT_DEB_CACHE }}" \
-                -o Dir::State::lists="${{ env.APT_META_CACHE }}" \
-            install -yq --no-install-recommends \
+          sudo apt update \
+            -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
+            -o Dir::Cache::Archives="${{ env.APT_CACHE_DIR }}/archives" \
+            -o Dir::State::Lists="${{ env.APT_CACHE_DIR }}/lists" \
+            -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
+            -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
+            -o Dir::Cache::Archives="${{ env.APT_CACHE_DIR }}/archives" \
+            -o Dir::State::Lists="${{ env.APT_CACHE_DIR }}/lists" \
             ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
-
-      - name: Bersihkan File Tak Bisa Di-cache
-        run: |
-          rm -f ${{ env.APT_CACHE_DIR }}/archives/lock
-          rm -f ${{ env.APT_CACHE_DIR }}/lists/lock
-          rm -rf ${{ env.APT_CACHE_DIR }}/archives/partial
-          rm -rf ${{ env.APT_CACHE_DIR }}/lists/partial
-    
-      - name: Tampilkan Isi Cache (Optional)
-        run: |
-          echo "=== .deb Files ==="
-          ls -lh ${{ env.APT_DEB_CACHE }} | grep '\.deb' || echo "(kosong)"
-          
-          echo "=== Metadata ==="
-          ls -lh ${{ env.APT_META_CACHE }} || echo "(kosong)"
+      
+      - name: Save APT Cache (optional, cache action does this automatically if key miss)
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.APT_CACHE_DIR }}
+          key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
     
       - name: Set ccache
         run: |
@@ -434,37 +423,35 @@ jobs:
             set_config CONFIG_DEFAULT_TCP_CONG bbr
           fi
 
-          #启用  BPF 流解析器,实现高性能网络流量处理,增强网络监控和分析能力
-          #echo "CONFIG_BPF_STREAM_PARSER=y" >> ./common/arch/arm64/configs/gki_defconfig
-          #开启增强 Netfilter 防火墙扩展模块,支持基于地址类型的匹配规则,启用 IP 集合支持,提高防火墙规则灵活性,支持更复杂的流量过滤策略
+          # Turn on the enhanced Netfilter firewall extension module to support matching rules based on address type, enable IP collection support, improve the flexibility of firewall rules, and support more complex traffic filtering strategies.
           echo "CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_NETFILTER_XT_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          #启用 IP 集框架及其多种数据结构实现,提供高效的大规模 IP 地址管理,提高防火墙规则处理效率,减少内存占用
-          # echo "CONFIG_IP_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_MAX=65534" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_BITMAP_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_BITMAP_PORT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_IPMARK=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_IPPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_IPPORTIP=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_IPPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_MAC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_NETPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_NET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_NETNET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_NETPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP_SET_LIST_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # #启用 IPv6 网络地址转换
-          # echo "CONFIG_IP6_NF_NAT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IP6_NF_TARGET_MASQUERADE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # Enables the IP set framework and its multiple data structure implementations to provide efficient large-scale IP address management, improve firewall rule processing efficiency, and reduce memory usage
+          echo "CONFIG_IP_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_MAX=65534" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_BITMAP_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_BITMAP_PORT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_IPMARK=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_IPPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_IPPORTIP=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_IPPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_MAC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_NETPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_NET=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_NETNET=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_NETPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP_SET_LIST_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # Enable IPv6 network address translation
+          echo "CONFIG_IP6_NF_NAT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IP6_NF_TARGET_MASQUERADE=y" >> ./common/arch/arm64/configs/gki_defconfig
           #由于部分机型的vintf兼容性检测规则，在开启CONFIG_IP6_NF_NAT后开机会出现"您的设备内部出现了问题。请联系您的设备制造商了解详情。"的提示，故添加一个配置修复补丁，在编译内核时隐藏CONFIG_IP6_NF_NAT=y但不影响对应功能编译
           cd common
-          # wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/other_patch/config.patch
-          # patch -p1 -F 3 < config.patch || true
+          wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/other_patch/config.patch
+          patch -p1 -F 3 < config.patch || true
             
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./build.config.gki
