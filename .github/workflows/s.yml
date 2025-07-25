@@ -92,7 +92,7 @@ jobs:
           sudo rm -rf /var/lib/man-db/auto-update
           sudo apt update
           sudo apt-get install -y --no-install-recommends \
-            ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
+            ccache python3 git curl build-essential libssl-dev bison flex libelf-dev aria2
             # curl bison flex make binutils git perl gcc python3 \
             # python-is-python3 bc libssl-dev libelf-dev \
             # bc aria2 zip unzip ccache
@@ -122,28 +122,32 @@ jobs:
           chmod a+rx ~/repo
           sudo mv ~/repo /usr/local/bin/repo
 
-      - name: Initialize repo and sync
+      # - name: Initialize repo and sync
+      #   run: |
+      #     mkdir kernel_workspace && cd kernel_workspace
+      #     FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
+      #     repo init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
+      #     REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
+      #     DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
+          
+      #     if grep -q deprecated <<< $REMOTE_BRANCH; then
+      #       echo "Found deprecated branch: $FORMATTED_BRANCH"
+      #       sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
+      #     fi
+          
+      #     repo --trace sync -c -j$(nproc --all) --no-tags
+      #     rm -rf ./common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+      #     rm -rf ./msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+
+      #     SUBLEVEL=$(grep '^SUBLEVEL' "./common/Makefile" | cut -d '=' -f2 | xargs)
+      #     echo "SUBLEVEL=$SUBLEVEL" >> $GITHUB_ENV
+
+      - name: Fetch kernel repos
         run: |
-          mkdir kernel_workspace && cd kernel_workspace
-
-          aria2c -s16 -x16 -k1M https://your-host.com/kernel_repo_android15-6.6-lts.tar.gz
-          tar -xzf kernel_repo_android15-6.6-lts.tar.gz
+          git clone https://github.com/xrembo404/test-bot.git
+          chmod +x .github/workflows/se.sh
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
-          repo init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
-          REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
-          DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
-          
-          if grep -q deprecated <<< $REMOTE_BRANCH; then
-            echo "Found deprecated branch: $FORMATTED_BRANCH"
-            sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
-          fi
-          
-          repo --trace sync -c -j$(nproc --all) --no-tags
-          rm -rf ./common/android/abi_gki_protected_exports_* || echo "No protected exports!"
-          rm -rf ./msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
-
-          SUBLEVEL=$(grep '^SUBLEVEL' "./common/Makefile" | cut -d '=' -f2 | xargs)
-          echo "SUBLEVEL=$SUBLEVEL" >> $GITHUB_ENV
+          ./.github/workflows/se.sh "$FORMATTED_BRANCH"
     
       - name: Add KernelSU & Apply SUSFS Patches
         run: |
