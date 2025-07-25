@@ -134,11 +134,17 @@ jobs:
           find "${{ env.APT_CACHE_DIR }}/archives" -maxdepth 1 -type f -name '*.deb' -exec ls -lh {} +
 
       # Simpan daftar ke file
-      - name: Simpan dan tampilkan daftar file .deb
+      - name: Simpan dan tampilkan daftar file .deb (aman)
         run: |
-          find "${{ env.APT_CACHE_DIR }}/archives" -type f -name '*.deb' > deb-list.txt
-          echo "📝 Isi file deb-list.txt:"
-          cat deb-list.txt
+          echo "📦 Mencari file .deb di cache APT..."
+          find "${{ env.APT_CACHE_DIR }}/archives" -maxdepth 1 -type f -name '*.deb' > deb-list.txt || true
+      
+          if [[ -s deb-list.txt ]]; then
+            echo "📝 Isi file deb-list.txt:"
+            cat deb-list.txt
+          else
+            echo "(❗Tidak ada file .deb ditemukan di cache)"
+          fi
           
       - name: Save APT Cache (optional, cache action does this automatically if key miss)
         uses: actions/cache@v3
