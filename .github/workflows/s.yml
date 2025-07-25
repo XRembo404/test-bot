@@ -420,7 +420,8 @@ jobs:
             # set_config CONFIG_TCP_CONG_HTCP y
             # set_config CONFIG_TCP_CONG_NV y
             # set_config CONFIG_TCP_CONG_BRUTAL y
-            set_config CONFIG_DEFAULT_TCP_CONG bbr
+            # set_config CONFIG_DEFAULT_TCP_CONG bbr
+            set_config CONFIG_DEFAULT_BBR y
           fi
 
           # Turn on the enhanced Netfilter firewall extension module to support matching rules based on address type, enable IP collection support, improve the flexibility of firewall rules, and support more complex traffic filtering strategies.
