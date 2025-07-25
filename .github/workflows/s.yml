@@ -69,83 +69,17 @@ jobs:
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
-
-      # - name: Setup APT Cache Path
-      #   run: |
-      #     echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
-      #     mkdir -p $HOME/apt-cache
-          
-      # - name: Restore APT Cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{ env.APT_CACHE_DIR }}
-      #     key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
-      #     restore-keys: |
-      #       apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
-      #       apt-cache-${{ runner.os }}-${{ inputs.android_version }}-
       
-      # - name: Install Dependencies
-      #   run: |
-      #     sudo apt -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
-      #        -o Dir::Cache::archives="${{ env.APT_CACHE_DIR }}" \
-      #        update -qq
-      #     sudo DEBIAN_FRONTEND=noninteractive \
-      #        apt -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
-      #            -o Dir::Cache::archives="${{ env.APT_CACHE_DIR }}" \
-      #        install -yq --no-install-recommends \
-      #          ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
-      #     # sudo apt update -o Dir::Cache="${{ env.APT_CACHE_DIR }}" -qq
-      #     # sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
-      #     #    ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
-          
-      # Restore APT Cache (.deb) from default system cache dir
-      - name: Restore APT Cache
-        uses: actions/cache@v3
-        with:
-          path: /var/cache/apt/archives
-          key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
-          restore-keys: |
-            apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
-            apt-cache-${{ runner.os }}-${{ inputs.android_version }}-
-
-      # Install Dependencies (tanpa hack Dir::Cache)
       - name: Install Dependencies
         run: |
-          sudo apt update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
+          sudo apt-mark hold firefox
+          sudo apt-mark hold libc-bin
+          sudo apt purge man-db
+          sudo rm -rf /var/lib/man-db/auto-update
+          sudo apt update
+          sudo apt-get install -y --no-install-recommends \
             ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
-
-      # Tampilkan isi file .deb yang tersimpan
-      - name: List Cached .deb Packages
-        run: |
-          echo "📦 Daftar file .deb di /var/cache/apt/archives:"
-          find /var/cache/apt/archives -maxdepth 1 -type f -name '*.deb' -exec ls -lh {} + || echo "(tidak ada file .deb ditemukan)"
-
-      # Simpan daftar ke file dan tampilkan isinya
-      - name: Simpan dan tampilkan daftar file .deb
-        run: |
-          find /var/cache/apt/archives -maxdepth 1 -type f -name '*.deb' > deb-list.txt || true
-          if [[ -s deb-list.txt ]]; then
-            echo "📝 Isi file deb-list.txt:"
-            cat deb-list.txt
-          else
-            echo "(❗Tidak ada file .deb ditemukan di cache)"
-          fi
-
-      # Upload daftar .deb sebagai artifact (opsional)
-      - name: Upload Daftar .deb sebagai Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: daftar-deb-cache
-          path: deb-list.txt
-
-      # Save APT Cache (optional; cache action otomatis menyimpan jika key baru)
-      - name: Save APT Cache
-        uses: actions/cache@v3
-        with:
-          path: /var/cache/apt/archives
-          key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
-    
+          
       - name: Set ccache
         run: |
           ccache --version
