@@ -122,33 +122,25 @@ jobs:
           chmod a+rx ~/repo
           sudo mv ~/repo /usr/local/bin/repo
 
-      # - name: Initialize repo and sync
-      #   run: |
-      #     mkdir kernel_workspace && cd kernel_workspace
-      #     FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
-      #     repo init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
-      #     REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
-      #     DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
-          
-      #     if grep -q deprecated <<< $REMOTE_BRANCH; then
-      #       echo "Found deprecated branch: $FORMATTED_BRANCH"
-      #       sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
-      #     fi
-          
-      #     repo --trace sync -c -j$(nproc --all) --no-tags
-      #     rm -rf ./common/android/abi_gki_protected_exports_* || echo "No protected exports!"
-      #     rm -rf ./msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
-
-      #     SUBLEVEL=$(grep '^SUBLEVEL' "./common/Makefile" | cut -d '=' -f2 | xargs)
-      #     echo "SUBLEVEL=$SUBLEVEL" >> $GITHUB_ENV
-
-      - name: Fetch kernel repos
+      - name: Initialize repo and sync
         run: |
-          curl -LSs https://github.com/$GITHUB_REPOSITORY/raw/main/.github/workflows/se.sh -o se.sh
-          ls -al
-          chmod +x se.sh
+          mkdir kernel_workspace && cd kernel_workspace
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
-          ./se.sh "$FORMATTED_BRANCH"
+          repo init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
+          REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
+          DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
+          
+          if grep -q deprecated <<< $REMOTE_BRANCH; then
+            echo "Found deprecated branch: $FORMATTED_BRANCH"
+            sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
+          fi
+          
+          repo --trace sync -c -j$(nproc --all) --no-tags
+          rm -rf ./common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          rm -rf ./msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+
+          SUBLEVEL=$(grep '^SUBLEVEL' "./common/Makefile" | cut -d '=' -f2 | xargs)
+          echo "SUBLEVEL=$SUBLEVEL" >> $GITHUB_ENV
     
       - name: Add KernelSU & Apply SUSFS Patches
         run: |
