@@ -72,8 +72,8 @@ jobs:
 
       # - name: Setup APT Cache Path
       #   run: |
-      #     echo "APT_CACHE_DIR=$HOME/apt-cache/archives" >> $GITHUB_ENV
-      #     mkdir -p $HOME/apt-cache/archives
+      #     echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
+      #     mkdir -p $HOME/apt-cache
           
       # - name: Restore APT Cache
       #   uses: actions/cache@v3
@@ -98,59 +98,52 @@ jobs:
       #     # sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
       #     #    ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
           
-      - name: Setup APT Cache Path
-        run: |
-          echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
-          mkdir -p $HOME/apt-cache/archives/partial
-          mkdir -p $HOME/apt-cache/lists/partial
-          chmod -R a+rx $HOME/apt-cache
-      
+      # Restore APT Cache (.deb) from default system cache dir
       - name: Restore APT Cache
         uses: actions/cache@v3
         with:
-          path: ${{ env.APT_CACHE_DIR }}
+          path: /var/cache/apt/archives
           key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
           restore-keys: |
             apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
             apt-cache-${{ runner.os }}-${{ inputs.android_version }}-
-      
+
+      # Install Dependencies (tanpa hack Dir::Cache)
       - name: Install Dependencies
         run: |
-          sudo -E apt update \
-            -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
-            -o Dir::Cache::Archives="${{ env.APT_CACHE_DIR }}/archives" \
-            -o Dir::State::Lists="${{ env.APT_CACHE_DIR }}/lists" \
-            -qq
-      
-          sudo -E DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
-            -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
-            -o Dir::Cache::Archives="${{ env.APT_CACHE_DIR }}/archives" \
-            -o Dir::State::Lists="${{ env.APT_CACHE_DIR }}/lists" \
+          sudo apt update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
             ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
 
-      # Show cached .deb files
+      # Tampilkan isi file .deb yang tersimpan
       - name: List Cached .deb Packages
         run: |
-          echo "📦 Daftar file .deb yang tersimpan di cache:"
-          find "${{ env.APT_CACHE_DIR }}/archives" -maxdepth 1 -type f -name '*.deb' -exec ls -lh {} +
+          echo "📦 Daftar file .deb di /var/cache/apt/archives:"
+          find /var/cache/apt/archives -maxdepth 1 -type f -name '*.deb' -exec ls -lh {} + || echo "(tidak ada file .deb ditemukan)"
 
-      # Simpan daftar ke file
-      - name: Simpan dan tampilkan daftar file .deb (aman)
+      # Simpan daftar ke file dan tampilkan isinya
+      - name: Simpan dan tampilkan daftar file .deb
         run: |
-          echo "📦 Mencari file .deb di cache APT..."
-          find "${{ env.APT_CACHE_DIR }}/archives" -maxdepth 1 -type f -name '*.deb' > deb-list.txt || true
-      
+          find /var/cache/apt/archives -maxdepth 1 -type f -name '*.deb' > deb-list.txt || true
           if [[ -s deb-list.txt ]]; then
             echo "📝 Isi file deb-list.txt:"
             cat deb-list.txt
           else
             echo "(❗Tidak ada file .deb ditemukan di cache)"
           fi
-          
-      - name: Save APT Cache (optional, cache action does this automatically if key miss)
+
+      # Upload daftar .deb sebagai artifact (opsional)
+      - name: Upload Daftar .deb sebagai Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daftar-deb-cache
+          path: deb-list.txt
+
+      # Save APT Cache (optional; cache action otomatis menyimpan jika key baru)
+      - name: Save APT Cache
         uses: actions/cache@v3
         with:
-          path: ${{ env.APT_CACHE_DIR }}
+          path: /var/cache/apt/archives
           key: apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
     
       - name: Set ccache
