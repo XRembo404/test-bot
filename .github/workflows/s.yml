@@ -116,12 +116,13 @@ jobs:
       
       - name: Install Dependencies
         run: |
-          sudo apt update \
+          sudo -E apt update \
             -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
             -o Dir::Cache::Archives="${{ env.APT_CACHE_DIR }}/archives" \
             -o Dir::State::Lists="${{ env.APT_CACHE_DIR }}/lists" \
             -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
+      
+          sudo -E DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
             -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
             -o Dir::Cache::Archives="${{ env.APT_CACHE_DIR }}/archives" \
             -o Dir::State::Lists="${{ env.APT_CACHE_DIR }}/lists" \
