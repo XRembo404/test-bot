@@ -296,6 +296,11 @@ jobs:
               set_config CONFIG_KALLSYMS y
               set_config CONFIG_KALLSYMS_ALL y
               set_config CONFIG_KALLSYMS_BASE_RELATIVE y
+              set_config CONFIG_MODULES y
+              set_config CONFIG_MODULE_UNLOAD y
+              set_config CONFIG_BPF y
+              set_config CONFIG_KALLSYMS_LOOKUP y
+              set_config CONFIG_EMBEDDED y
             else
               NOKPM="NoKPM"
               echo "MODEKPM=$NOKPM" >> $GITHUB_ENV
