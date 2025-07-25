@@ -72,8 +72,8 @@ jobs:
 
       # - name: Setup APT Cache Path
       #   run: |
-      #     echo "APT_CACHE_DIR=$HOME/apt-cache" >> $GITHUB_ENV
-      #     mkdir -p $HOME/apt-cache
+      #     echo "APT_CACHE_DIR=$HOME/apt-cache/archives" >> $GITHUB_ENV
+      #     mkdir -p $HOME/apt-cache/archives
           
       # - name: Restore APT Cache
       #   uses: actions/cache@v3
@@ -84,21 +84,58 @@ jobs:
       #       apt-cache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
       #       apt-cache-${{ runner.os }}-${{ inputs.android_version }}-
       
-      - name: Install Dependencies
+      # - name: Install Dependencies
+      #   run: |
+      #     sudo apt -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
+      #        -o Dir::Cache::archives="${{ env.APT_CACHE_DIR }}" \
+      #        update -qq
+      #     sudo DEBIAN_FRONTEND=noninteractive \
+      #        apt -o Dir::Cache="${{ env.APT_CACHE_DIR }}" \
+      #            -o Dir::Cache::archives="${{ env.APT_CACHE_DIR }}" \
+      #        install -yq --no-install-recommends \
+      #          ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
+      #     # sudo apt update -o Dir::Cache="${{ env.APT_CACHE_DIR }}" -qq
+      #     # sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
+      #     #    ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
+          
+      - name: Setup APT Cache Path
         run: |
-          sudo apt-mark hold firefox
-          sudo apt-mark hold libc-bin
-          sudo apt-mark hold man-db
-          sudo rm -rf /var/lib/man-db/auto-update
-          sudo apt update
-          sudo apt-get install -y --no-install-recommends \
+          echo "APT_DEB_CACHE=$HOME/apt-cache/archives" >> $GITHUB_ENV
+          echo "APT_META_CACHE=$HOME/apt-cache/lists" >> $GITHUB_ENV
+          mkdir -p "$APT_DEB_CACHE/partial"
+          mkdir -p "$APT_META_CACHE/partial"
+
+      - name: Restore APT Cache (.deb + metadata)
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.APT_DEB_CACHE }}
+            ${{ env.APT_META_CACHE }}
+          key: apt-fullcache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}
+          restore-keys: |
+            apt-fullcache-${{ runner.os }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}-
+            apt-fullcache-${{ runner.os }}-${{ inputs.android_version }}-
+      
+      - name: Install Dependencies (cached .deb + metadata)
+        run: |
+          sudo apt -o Dir::Cache::archives="${{ env.APT_DEB_CACHE }}" \
+                   -o Dir::State::lists="${{ env.APT_META_CACHE }}" \
+                   update -qq
+                   
+          sudo DEBIAN_FRONTEND=noninteractive \
+            apt -o Dir::Cache::archives="${{ env.APT_DEB_CACHE }}" \
+                -o Dir::State::lists="${{ env.APT_META_CACHE }}" \
+            install -yq --no-install-recommends \
             ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
-            # curl bison flex make binutils git perl gcc python3 \
-            # python-is-python3 bc libssl-dev libelf-dev \
-            # bc aria2 zip unzip ccache
-          # sudo apt update -o Dir::Cache="${{ env.APT_CACHE_DIR }}" -qq
-          # sudo DEBIAN_FRONTEND=noninteractive apt install -yq --no-install-recommends \
-            
+      
+      - name: Tampilkan Isi Cache (Optional)
+        run: |
+          echo "=== .deb Files ==="
+          ls -lh ${{ env.APT_DEB_CACHE }} | grep '\.deb' || echo "(kosong)"
+          
+          echo "=== Metadata ==="
+          ls -lh ${{ env.APT_META_CACHE }} || echo "(kosong)"
+    
       - name: Set ccache
         run: |
           ccache --version
@@ -415,8 +452,8 @@ jobs:
           # echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> ./common/arch/arm64/configs/gki_defconfig
           # echo "CONFIG_IP_SET_LIST_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
           #启用 IPv6 网络地址转换
-          echo "CONFIG_IP6_NF_NAT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_IP6_NF_TARGET_MASQUERADE=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # echo "CONFIG_IP6_NF_NAT=y" >> ./common/arch/arm64/configs/gki_defconfig
+          # echo "CONFIG_IP6_NF_TARGET_MASQUERADE=y" >> ./common/arch/arm64/configs/gki_defconfig
           #由于部分机型的vintf兼容性检测规则，在开启CONFIG_IP6_NF_NAT后开机会出现"您的设备内部出现了问题。请联系您的设备制造商了解详情。"的提示，故添加一个配置修复补丁，在编译内核时隐藏CONFIG_IP6_NF_NAT=y但不影响对应功能编译
           cd common
           wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/other_patch/config.patch
