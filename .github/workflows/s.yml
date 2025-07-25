@@ -125,7 +125,20 @@ jobs:
             -o Dir::Cache::Archives="${{ env.APT_CACHE_DIR }}/archives" \
             -o Dir::State::Lists="${{ env.APT_CACHE_DIR }}/lists" \
             ccache python3 git curl build-essential libssl-dev bison flex libelf-dev
-      
+
+      # Show cached .deb files
+      - name: List Cached .deb Packages
+        run: |
+          echo "📦 Daftar file .deb yang tersimpan di cache:"
+          find "${{ env.APT_CACHE_DIR }}/archives" -type f -name '*.deb' -exec ls -lh {} +
+
+      # Simpan daftar ke file
+      - name: Simpan dan tampilkan daftar file .deb
+        run: |
+          find "${{ env.APT_CACHE_DIR }}/archives" -type f -name '*.deb' > deb-list.txt
+          echo "📝 Isi file deb-list.txt:"
+          cat deb-list.txt
+          
       - name: Save APT Cache (optional, cache action does this automatically if key miss)
         uses: actions/cache@v3
         with:
