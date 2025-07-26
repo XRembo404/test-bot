@@ -295,12 +295,6 @@ jobs:
               set_config CONFIG_KPM y
               set_config CONFIG_KALLSYMS y
               set_config CONFIG_KALLSYMS_ALL y
-              set_config CONFIG_KALLSYMS_BASE_RELATIVE y
-              set_config CONFIG_MODULES y
-              set_config CONFIG_MODULE_UNLOAD y
-              set_config CONFIG_BPF y
-              set_config CONFIG_KALLSYMS_LOOKUP y
-              set_config CONFIG_EMBEDDED y
             else
               NOKPM="NoKPM"
               echo "MODEKPM=$NOKPM" >> $GITHUB_ENV
@@ -375,8 +369,7 @@ jobs:
             # set_config CONFIG_TCP_CONG_HTCP y
             # set_config CONFIG_TCP_CONG_NV y
             # set_config CONFIG_TCP_CONG_BRUTAL y
-            set_config CONFIG_DEFAULT_TCP_CONG bbr
-            # set_config CONFIG_DEFAULT_BBR y
+            set_config CONFIG_DEFAULT_BBR y
           fi
 
           # More Configuration
