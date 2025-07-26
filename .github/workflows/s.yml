@@ -478,10 +478,9 @@ jobs:
           [+] SUSFS ඞ ${{ env.SUSFS_VERSION }}
           [+] LZ4 v1.10.0 (Optimization armv8a)
           [+] TCP Pacing Tweaks
-          [+] Wireguard Support
-          [+] Magic Mount Support
-          [+] BBR + ECN Support
-          [+] TMPFS + RCU Support
+          [+] Hibernation Support
+          [+] BBR Algorithm + ECN Support
+          [+] TMPFS XATTR + POSIX ACL Support
           ```
           EOF
           
