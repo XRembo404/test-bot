@@ -49,7 +49,7 @@ on:
         type: boolean
         default: true
       use_kpm:
-        description: 'Enables the KPM Patch (may slightly increase power consumption, can be turned off if not needed)'
+        description: 'Enables the KPM Patch (may slightly increase power consumption)'
         required: true
         type: boolean
         default: false
